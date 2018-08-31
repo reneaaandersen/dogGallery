@@ -20,11 +20,11 @@
 		<h1>DOGS</h1>
 
 		<button class="btn" data-toggle="collapse" href="#accordion" id="selectDog">Select dogs</button>
-		<br /><br />
-		<div id="accordion" class="collapse" style="">
+		<br />
+		<div id="accordion" class="collapse" style="overflow:hidden; ">
 			<!-- Free real estate for dog breeds and sub-breeds -->
 		</div> 
-		
+		<br />
 		<div class="container" id="imageBox">
 			<!-- Free real estate for images, load on page load -->
 		</div>

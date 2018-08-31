@@ -115,7 +115,7 @@ $("#selectDog").click(function(){
 	}
 });
 
-function breedArrayToSelectors(breedArray) {
+function breedArrayToMenuItems(breedArray) {
 	var output = "";
 	var currentRowContent = "";
 	var sliderContent = "";
@@ -125,10 +125,12 @@ function breedArrayToSelectors(breedArray) {
 		currentRowContent += "<div class=\"col-2\"><button class=\"btn slider\" data-toggle=\"collapse\" href=\"#"+breed+"\" style=\"width: 100%;\">"+breed+"</button></div>";
 
 		if ( subBreeds.length > 0  ){
-			sliderContent += "<div style=\"overflow:hidden;\"><div class=\"collapse row slider\" id=\""+breed+"\">";
+			sliderContent += "<div style=\"overflow:auto;\"><div class=\"collapse slider\" id=\""+breed+"\">";
+			sliderContent += "<div class=\"btn-group\">";
 			$.each(subBreeds, function(index, subBreed){
-				sliderContent += "<button class=\"btn\">subBreed</btn>";
+				sliderContent += "<button class=\"btn sub\">"+subBreed+"</btn>&nbsp";
 			});
+			sliderContent += "</div>";
 			sliderContent += "</div>";
 			sliderContent += "</div>";
 		}
@@ -221,7 +223,8 @@ switchImageTimer = window.setTimeout(switchImage, IMAGE_SWITCH_TIME);
 
 $.get("getDogList.php", function(data){
 	$("#accordion").text("");
-	$("#accordion").append(breedArrayToSelectors(JSON.parse(data).message));
+	$("#accordion").append("<br />");
+	$("#accordion").append(breedArrayToMenuItems(JSON.parse(data).message));
 });
 
 
@@ -231,4 +234,47 @@ $("#accordion").on("click", "button", function() {
 			$(this).collapse("hide");
 		});
 	});
+});
+
+
+$("#accordion").on("click", "button.slider", function() {
+	var targetId = $(this).attr("href");
+	if ( $(targetId).length == 0 ) {
+		if ( $(this).hasClass("active") ) {
+			$(this).removeClass("active");
+		}
+		else {
+			$(this).addClass("active");
+		}
+	}
+});
+
+$("#accordion").on("click", "button.sub", function() {
+	var parentHref = $(this).parent().parent().attr("id");
+	
+	if ( $(this).hasClass("active") ) {
+		if ( $(this).siblings(".active").length > 0 ) {
+			$("button[href$='#"+parentHref+"']").removeClass("active");
+			$("button[href$='#"+parentHref+"']").addClass("subActive");
+		}
+		else {
+			$("button[href$='#"+parentHref+"']").removeClass("active");
+			$("button[href$='#"+parentHref+"']").removeClass("subActive");
+		}
+		
+		$(this).removeClass("active");
+	}
+	else {
+		
+		if ( $(this).siblings(".active").length == $(this).siblings().length ) {
+			$("button[href$='#"+parentHref+"']").addClass("active");
+			$("button[href$='#"+parentHref+"']").removeClass("subActive");
+		}
+		else {
+			$("button[href$='#"+parentHref+"']").removeClass("active");
+			$("button[href$='#"+parentHref+"']").addClass("subActive");
+		}
+		
+		$(this).addClass("active");
+	}
 });

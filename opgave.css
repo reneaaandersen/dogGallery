@@ -7,3 +7,6 @@ img { max-height: 200px; min-height: 200px; }
 div.row { margin-left: auto; margin-right: auto; text-align: center; }
 
 #accordion { max-height: 800px; overflow: scroll; }
+
+button.active {background-color: #66FF66;}
+button.subActive {background-color: #BBFFBB;}
