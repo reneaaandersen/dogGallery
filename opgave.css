@@ -1,0 +1,9 @@
+div.card-header.active {background-color: #66FF66;}
+a.list-group-item.active {background-color: #66FF66;}
+div.card-header.subActive {background-color: #BBFFBB;}
+
+img { max-height: 200px; min-height: 200px; }
+
+div.row { margin-left: auto; margin-right: auto; text-align: center; }
+
+#accordion { max-height: 800px; overflow: scroll; }
