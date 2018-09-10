@@ -1,12 +1,10 @@
-div.card-header.active {background-color: #66FF66;}
-a.list-group-item.active {background-color: #66FF66;}
-div.card-header.subActive {background-color: #BBFFBB;}
-
-img { max-height: 200px; min-height: 200px; }
-
-div.row { margin-left: auto; margin-right: auto; text-align: center; }
-
 #accordion { max-height: 800px; overflow: scroll; }
-
+#modalImage { max-width: 100%; }
+#myModal div.modal-body { margin-left: auto; margin-right: auto; }
 button.active {background-color: #66FF66;}
+button.sub { margin-right: 5px; }
 button.subActive {background-color: #BBFFBB;}
+div.btn-group { margin-bottom: 5px; margin-top: 3px; }
+div.col-2 { margin-bottom: 2px; }
+div.row { margin-left: auto; margin-right: auto; text-align: center; }
+img.img-thumbnail { max-height: 200px; min-height: 200px; }

@@ -7,84 +7,13 @@ class DogAPI
 	const GET_STRING_ALL_BREEDS 		= "https://dog.ceo/api/breeds/list/all";		// List of breeds and subbreeds
 	const GET_STRING_RANDOM_BREED_IMAGE = "https://dog.ceo/api/breeds/image/random/";	// Get random breed image, append number to limit results
 	
-	// Gets all the breeds and subbreeds and echos them as bootstrap cards
-	public function getAllBreedsAsCards() {
-		foreach ( $this->getAllBreeds() as $breed => $subBreedArray ) {
-			echo $this->getCardHTML($breed, $subBreedArray);
-		}		
-	}
-	
-	// Gets $count random images from the api, formattet in rows and columns
-	public function getRandomImagesAsGrid($count) {
-		// Fetch those images Lassy!
-		$response = $this->getRandomImages($count);
-		
-		// We need to know how many elements we've printed to pad any leftover columns
-		$counter = 0;
-		foreach ( $response as $image ) {
-			// We have 4 rows, so for every 4th image we make a new row
-			if ( $counter % 4 == 0 ) {
-				echo "<div class=\"row\">";
-			}
-			
-			// Column and image
-			echo "<div class=\"col-sm\"><img class=\"img-thumbnail\" src=\"".$image."\"></img></div>";
-			
-			$counter++;
-			
-			// Increase the counter before testing if it's a 4th image again, else we'll just close the tag :|
-			if ( $counter % 4 == 0 ) {
-				echo "</div><br />";
-			}
-		}
-		
-		// Any empty columns is just filled with an empty box, else the row div will stretch the last images 
-		// to fill itself
-		while ( $counter % 4 != 0 ) {
-			echo "<div class=\"col-sm\"></div>";
-			$counter++;
-		}
-	}
-	
-	// Helper function to return bootstrap cards for every breed (and collapses for subbreeds)
-	public function getCardHTML($breedName, $subBreeds) {
-		// Header part
-		$response  = "<div class=\"card\">";
-		$response .= "<div class=\"card-header\">";
-		$response .= "<a class=\"card-link\" data-toggle=\"collapse\" href=\"#" . $breedName . "\">";
-		$response .= $breedName;
-		
-		// Only display the sub-breed counter if there is sub-breeds 
-		// (Now one could argue we should not display it when there is only one sub-breed)
-		if ( count($subBreeds) > 0 ) {
-			$response .= " <span class=\"badge badge-primary badge-pill\">".count($subBreeds)."</span>";
-		}
-		$response .= "</a>";
-		$response .= "</div>";
-		
-		// Collapsing header part
-		$response  .= "<div id=\"" . $breedName . "\" class=\"collapse\" data-parent=\"#accordion\">";
-		
-		// If there are sub-breeds add them as a collapsible
-		if ( count($subBreeds) > 0 ) {
-			$response .= "<div class=\"card-body\">";
-			$response .= "<div class=\"list-group\">";
-			
-			foreach ( $subBreeds as $subBreed ) {
-				$response .= "<a href=\"#!\" class=\"list-group-item list-group-item-action\">".$subBreed."</a>";
-			}
-			
-			$response .= "</div></div>";
-		}
-		
-		$response .= "</div></div>";
-		
-		return $response;
-	}
-	
 	// Overall handler for recieving lists
 	public function getListFromGET($getString) {
+		// We might get a 404 when getting breeds that does not exist, if we don't error handle we will get
+		// a warning that'll mess up our JSON
+		set_error_handler(function(){return array();});
 		$response = file_get_contents($getString);
+		restore_error_handler();
 	
 		// No response? Empty array!
 		if ( !$response ) {

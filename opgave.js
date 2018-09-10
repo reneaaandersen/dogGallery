@@ -1,96 +1,47 @@
-const MAX_DOG_IMAGES = 12;				// Display a maximum of 12 images
-const IMAGE_SWITCH_TIME = 5000;			// Switch image every 5 seconds
+const MAX_DOG_IMAGES = 12;				// The maximum number of images to display. Any images beyond this will be switched in and out.
+const IMAGE_SWITCH_TIME = 5000;			// Amount of milliseconds between switching images if there is too many
+const FADE_TIME = 1000;					// Fade time in milliseconds when switching between images
 
-// allDogs and displayedDogs are the selected images
 var allDogs = [];						// Holds the dogs that are not displayed, but selected
 var displayedDogs = [];					// Holds the dogs that are displayed and selected
-
-// Click handler for a card list element
-$("#accordion").on("click", ".card-link", function() {
-	// If there are children, don't color anything, just let the element expand. But if there aren't ...
-	if ( $(this).parent().siblings()[0].childElementCount == 0 ) {
-		// Check if it's already active or not, if it is, deactivate it
-		if ( $(this).parent().hasClass("active") ) {
-			$(this).parent().removeClass("active");
-		}
-		// Activate it otherwise
-		else {
-			$(this).parent().addClass("active");
-		}
-	}
-});
-
-// Click handler for a child element of a card list element
-$("#accordion").on("click", ".list-group-item", function() {
-	// Already active?
-	if ( $(this).hasClass("active") ) {
-		// Deactivate it!
-		$(this).removeClass("active");
-		
-		// Check if there are other active child elements
-		if ( $(this).siblings(".active").length > 0 ) {
-			// Set it as partially active
-			$(this).parentsUntil("#accordion").children(".card-header").removeClass("active");
-			$(this).parentsUntil("#accordion").children(".card-header").addClass("subActive");
-		}
-		// No active children?
-		else if ( $(this).siblings(".active").length == 0 ) {
-			// No activity at all for the parent
-			$(this).parentsUntil("#accordion").children(".card-header").removeClass("subActive");
-			$(this).parentsUntil("#accordion").children(".card-header").removeClass("active");
-		}
-	}
-	// Not active?
-	else {
-		// Check if all the other siblings are active 
-		if ( $(this).siblings(".active").length == $(this).siblings().length ) {
-			// If that's the case set the parent as fully active (fully selected)
-			$(this).parentsUntil("#accordion").children(".card-header").removeClass("subActive");
-			$(this).parentsUntil("#accordion").children(".card-header").addClass("active");
-		}
-		// If there are no other active children (and indirectly at least one other sibling), set it partially active
-		else if ( $(this).siblings(".active").length == 0 ) {
-			$(this).parentsUntil("#accordion").children(".card-header").addClass("subActive");
-		}
-		
-		// Activate the child itself!
-		$(this).addClass("active");
-	}
-});
-
-// If a string ends with a specific character, remove the character
-function trimEndChar(string, character){
-	if ( string.charAt(string.length-1) == character ) {
-		return string.substring(0, string.length-2);
-	}
-	return string;
-}
 
 // The "select dog" button
 $("#selectDog").click(function(){
 	// If the selector box is open when the button is pressed we refresh the images
 	if ( $("#accordion").hasClass("show") ) {
-		// This will be the breed list we send to the server
+		// Reset the text back to the original
+		$(this).text("Select dogs");
+		
+		// This will become the breed list we send to the server
 		var getString = "?";
 		
-		// Go through every card
-		$(".card-header").each(function(){
-			// If it's active or has a child that's active
-			if ( $(this).hasClass("active") || $(this).hasClass("subActive") ) {			
-				// Add the breed to the list
-				getString += $(this).children("a").attr("href").substring(1) + "=";
-				
-				// If any of the children is selected, add them to the list too
-				$($(this).children("a").attr("href") + " a.active").each(function() {
-					getString += $(this).text() + ","
-				});
-				
-				// Trim any extra commas we might have added
-				getString = trimEndChar(getString, ",");
-				
-				// Prepare for next breed
-				getString += "&";
+		// Get every active button
+		$("button.slider").each(function() {
+			// Skip any element that's not active nor has active child elements
+			if ( !($(this).hasClass("active") || $(this).hasClass("subActive")) ) {
+				return true;
 			}
+			
+			// The href Id which bootstrap uses to toggle display can also be used to see if a sub-element list exists
+			var hrefId = $(this).attr("href");
+			
+			// If there is no sub elements, we add the breed directly
+			if ( $(hrefId).length == 0 ) {
+				getString += $(this).text() + "&";
+				return true;
+			}
+			
+			// If there are sub-elements we add them as a list next to the breed name
+			// Also we don't need to worry about empty lists after the '=' because we already filtered out the things that weren't active/subactive :)
+			getString += $(this).text() + "=";
+			
+			// We add every active sub-button as a sub-breed
+			$(hrefId + " button.active").each(function(){
+				getString += $(this)[0].innerText.trim() + ",";
+			});
+			
+			// Trim any extra commas we might have added
+			getString = trimEndChar(getString, ",") + "&";
 		});
 		
 		// Trim any extra ampersands we might have added
@@ -113,41 +64,11 @@ $("#selectDog").click(function(){
 			switchImageTimer = window.setTimeout(switchImage, IMAGE_SWITCH_TIME);
 		});
 	}
+	// Toggle the text and just let the framework handle the toggle display
+	else {
+		$(this).text("Fetch images");
+	}
 });
-
-function breedArrayToMenuItems(breedArray) {
-	var output = "";
-	var currentRowContent = "";
-	var sliderContent = "";
-	var counter = 0;
-	
-	$.each(breedArray, function(breed, subBreeds) {
-		currentRowContent += "<div class=\"col-2\"><button class=\"btn slider\" data-toggle=\"collapse\" href=\"#"+breed+"\" style=\"width: 100%;\">"+breed+"</button></div>";
-
-		if ( subBreeds.length > 0  ){
-			sliderContent += "<div style=\"overflow:auto;\"><div class=\"collapse slider\" id=\""+breed+"\">";
-			sliderContent += "<div class=\"btn-group\">";
-			$.each(subBreeds, function(index, subBreed){
-				sliderContent += "<button class=\"btn sub\">"+subBreed+"</btn>&nbsp";
-			});
-			sliderContent += "</div>";
-			sliderContent += "</div>";
-			sliderContent += "</div>";
-		}
-		
-		counter++;
-		
-		if ( counter % 6 == 0 ) {
-			output += "<div class=\"row\">" + currentRowContent + "</div>";
-			output += sliderContent;
-			
-			currentRowContent = "";
-			sliderContent = "";
-		}
-	});
-	
-	return output;
-}
 
 // Transforms an image array into a grid string
 function imagesToGrid(imageList) {
@@ -162,7 +83,8 @@ function imagesToGrid(imageList) {
 		}
 		
 		// Add a column with the image
-		gridString += "<div class=\"col-sm\"><img class=\"img-thumbnail\" src=\""+value+"\"></img></div>";
+		console.log(value[0]);
+		gridString += "<div class=\"col-sm\"><img class=\"img-thumbnail\" src=\""+value[2]+"\" data-breed=\""+value[0]+"\" data-subBreed=\""+value[1]+"\"></img></div>";
 		
 		// Increase the counter before the end tag, else we will start and end in the same iteration
 		counter++;
@@ -183,6 +105,7 @@ function imagesToGrid(imageList) {
 	return gridString + "</div>";
 }
 
+// Switches an image every IMAGE_SWITCH_TIME milliseconds
 function switchImage() {
 	// Only switch if there are actually images to switch to!
 	if ( allDogs.length > 0 ) {
@@ -197,11 +120,13 @@ function switchImage() {
 		allDogs[newIndex] = oldDog;
 		
 		// Fade the old image out and use the callback afterwards to change the image
-		$($("img")[oldIndex]).fadeOut(1000, function() {
-			$("img")[oldIndex].src = newDog;
+		$($("img")[oldIndex]).fadeOut(FADE_TIME, function() {
+			$("img")[oldIndex].src = newDog[2];
 		});
 		// Fade in afterwards
-		$($("img")[oldIndex]).fadeIn(1000);
+		$($("img")[oldIndex]).fadeIn(FADE_TIME);
+		$($("img")[oldIndex]).attr("data-breed", newDog[0]);
+		$($("img")[oldIndex]).attr("data-subBreed", newDog[0]);
 	}
 	
 	// Ensure that the timer repeats next time
@@ -221,13 +146,7 @@ $.get("getRandomDogs.php", function(data){
 // Start the initial switch image timer
 switchImageTimer = window.setTimeout(switchImage, IMAGE_SWITCH_TIME);
 
-$.get("getDogList.php", function(data){
-	$("#accordion").text("");
-	$("#accordion").append("<br />");
-	$("#accordion").append(breedArrayToMenuItems(JSON.parse(data).message));
-});
-
-
+// Accordion click handler
 $("#accordion").on("click", "button", function() {
 	$("button.slider").click(function(){
 		$("div.slider.show").each(function(){
@@ -237,6 +156,7 @@ $("#accordion").on("click", "button", function() {
 });
 
 
+// Main element of the dog picker menu
 $("#accordion").on("click", "button.slider", function() {
 	var targetId = $(this).attr("href");
 	if ( $(targetId).length == 0 ) {
@@ -249,14 +169,19 @@ $("#accordion").on("click", "button.slider", function() {
 	}
 });
 
+// Sub elements of the dog picker menu
 $("#accordion").on("click", "button.sub", function() {
+	// Parent parent on the wall, I need your Id for getting the menu button for which to set the state
 	var parentHref = $(this).parent().parent().attr("id");
 	
+	// If this button is about to be deactivated ..
 	if ( $(this).hasClass("active") ) {
+		// .. and there are siblings that are active, the menu button is partially active
 		if ( $(this).siblings(".active").length > 0 ) {
 			$("button[href$='#"+parentHref+"']").removeClass("active");
 			$("button[href$='#"+parentHref+"']").addClass("subActive");
 		}
+		// .. and there are no siblings that are active, the menu button is not active
 		else {
 			$("button[href$='#"+parentHref+"']").removeClass("active");
 			$("button[href$='#"+parentHref+"']").removeClass("subActive");
@@ -264,12 +189,14 @@ $("#accordion").on("click", "button.sub", function() {
 		
 		$(this).removeClass("active");
 	}
+	// If the button is about to be activated ..
 	else {
-		
+		// .. and all the other siblings are active, then the menu button is fully active
 		if ( $(this).siblings(".active").length == $(this).siblings().length ) {
 			$("button[href$='#"+parentHref+"']").addClass("active");
 			$("button[href$='#"+parentHref+"']").removeClass("subActive");
 		}
+		// .. and none or some of the siblings are active, then the menu button is partially active
 		else {
 			$("button[href$='#"+parentHref+"']").removeClass("active");
 			$("button[href$='#"+parentHref+"']").addClass("subActive");
@@ -277,4 +204,28 @@ $("#accordion").on("click", "button.sub", function() {
 		
 		$(this).addClass("active");
 	}
+});
+
+// Helper function that removes a specific character from the end of a string if it exists
+function trimEndChar(string, character){
+	if ( string.charAt(string.length-1) == character ) {
+		return string.substring(0, string.length-1);
+	}
+	return string;
+}
+
+// Display a larger version of the image if it's clicked
+$("#imageBox").on("click", "img", function() {
+	var breed = $(this).attr("data-breed");
+	var subBreed = $(this).attr("data-subBreed");
+	
+	if ( subBreed == "" ) {
+		$("#imagePopup h4.modal-title").text(breed);
+	}
+	else {
+		$("#imagePopup h4.modal-title").text(breed + " - " + subBreed);
+	}
+	
+	$("#modalImage").attr("src", $(this).attr("src"));
+	$("#imagePopup").modal("toggle");
 });
