@@ -1,6 +1,6 @@
 #accordion { max-height: 800px; overflow: scroll; }
 #modalImage { max-width: 100%; }
-#myModal div.modal-body { margin-left: auto; margin-right: auto; }
+#imagePopup div.modal-body { margin-left: auto; margin-right: auto; text-align: center; }
 button.active {background-color: #66FF66;}
 button.sub { margin-right: 5px; }
 button.subActive {background-color: #BBFFBB;}
