@@ -8,6 +8,10 @@
 	// Use the dog API class
 	include("dogapi.php");
 	
+	const FILE_EXPIRE_TIME_SECONDS = 60;			// Fetch new image files every minute
+	const FILE_EXPIRE_COUNT		   = 5;				// How many files expire after file expire time
+													// Should keep this number low, because it is a GET request per new file we insert
+	
 	$dogapi = new DogAPI();
 	
 	// Every image we are to recieve
@@ -36,29 +40,57 @@
 			}
 		}
 	}
+	// Present existing images from the file cache, because doing a lot of GET requests is pretty draining
 	else {
-		// Else just get 20 random images
-		$breeds = array();
-		$count = 0;
+		$fileLastModified = filemtime("imagecache.txt");
+		$timeDiff = time() - $fileLastModified;
+		$updateImageCache = false;
 		
-		// Count the breeds and make an array of them, because none of the obvious cast methods nor count methods would work
-		foreach ( $dogapi->getAllBreeds() as $breed => $subBreed ) {
-			$count++;
-			array_push($breeds, $breed);
+		// File is old, update it after serving the user
+		if ( $timeDiff > FILE_EXPIRE_TIME_SECONDS ) {
+			$updateImageCache = true;
+		}
+
+		// Why oh why is new lines not ignored by default
+		$cachedImages = file("imagecache.txt",  FILE_IGNORE_NEW_LINES);
+		
+		// Present the images to the user
+		foreach ( $cachedImages as $dog ) {
+			array_push($allImages, explode(",", $dog));
 		}
 		
-		// Pick 4 random breeds and get 5 images of each. If we get 20 random breeds, the load will be VERY slow due to the many get requests.
-		// At this point we could hardcode the images which is bad if dog.ceo deletes the image
-		// We could also save the image links in a database and update them if one of them eventually 404s, but there is no mention of DB in the assignment description
-		while ( count($allImages) < 20 ) {
-			$breed = $breeds[rand(0, $count-1)];
-			foreach ( $dogapi->getRandomImagesOfBreeds($breed, 5) as $image ) {
-				array_push($allImages, array($breed, "", $image));
+		// Update an amount of images from the cache file
+		if ( $updateImageCache ) {
+			$cacheFile = fopen("imagecache.txt", "w");
+			
+			// Get all the breeds, did not find a way where we can use the getAllBreeds() array as an actual array
+			$breeds = array();
+			foreach ($dogapi->getAllBreeds() as $breed => $subBreeds) {
+				array_push($breeds, $breed);
 			}
+			
+			// Get a certain amount of new images of any breed
+			foreach ( range(1, FILE_EXPIRE_COUNT) as $x ) {
+				$breed = $breeds[rand(0, count($breeds))];
+				array_push($cachedImages, $breed . ",," . $dogapi->getRandomImagesOfBreeds($breed, 1)[0]);
+			}
+			
+			// Remove the 5 oldest images	
+			$cachedImages = array_splice($cachedImages, FILE_EXPIRE_COUNT, count($cachedImages));
+
+			// Insert all the images into the cache file
+			foreach ( $cachedImages as $dog ) {
+				if ( trim($dog) !== "" ) {
+					fwrite($cacheFile, $dog . PHP_EOL);
+				}
+			}
+			
+			// Lest we forget to close the file
+			fclose($cacheFile);
 		}
 	}
 	
-	// Just to make it neater, shuffle the image array before sending, that way the dogs won't be in single file 
+	// Just to make it neater, shuffle the image array before sending, that way dogs of the same breed won't follow after one another
 	shuffle($allImages);
 	
 	// Respond back to the user
